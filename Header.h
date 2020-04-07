@@ -10,16 +10,16 @@ class Iterator
 public:
 	Iterator(U *s) : stk(s)
 	{
-		index = this->begin();
+		index = this->end();
 	}
 
 	T* begin() const
 	{
-		return &stk->StackPtr[stk->top];
+		return &stk->StackPtr[0];
 	}
 	T* end() const
 	{
-		return &stk->StackPtr[0];
+		return &stk->StackPtr[stk->top];
 	}
 	T* current() const
 	{
@@ -28,7 +28,7 @@ public:
 
 	bool isDone() const
 	{
-		return index == end() - 1;
+		return (index == begin() - 1) ;
 	}
 
 	const Iterator& operator++()
@@ -60,13 +60,19 @@ public:
 		return *index;
 	}
 
-	bool operator== (Iterator &it) const
+	bool operator== (const Iterator &it) const
 	{
 		return (index == it.index);
 	}
 
-	void reset() {
-		index = this->begin();
+	bool operator!= (const Iterator &it) const
+	{
+		return !(index == it.index);
+	}
+
+	void reset() 
+	{
+		index = this->end();
 	}
 
 private:
@@ -85,22 +91,15 @@ public:
 	Stack(); // Конструктор по умолчанию
 	~Stack(); // Деструктор
 	bool Push(const T value); // Операция добавления элемента в стек
-	bool Pop(); // Операция удаления элемента из стека
+	bool PushFront(const T value); // Операция добавления в начало очереди
+	bool Pop(); // Операция удаления последнего элемента из стека
+	bool PopFront(); // Операция удаления из начало очереди
 	T Top() const; // Определение верхнего элемента без его удаления
 	int Size() const; // Определение размера очереди
 	bool Empty() const; // Проверка на пустоту
 	bool Full() const; // Проверка на полноту
 	Stack& operator=(Stack &a); // Перегрузка оператора присваивания
 	friend class Iterator<T, N, Stack>;
-	T* begin() const
-	{
-		return &StackPtr[top];
-	}
-
-	T* end() const
-	{
-		return &StackPtr[0];
-	}
 
 	Iterator<T, N, Stack> CreateIterator()
 	{
@@ -185,6 +184,25 @@ bool Stack<T, N>::Push(const T value)
 	return true; // При успехе возвращаем true
 }
 
+template <typename T, int N>
+bool Stack<T, N>::PushFront(const T value)
+{
+	if (Full()) // Проверка очереди на полноту, если она заполнена, то выводим соответствующее сообщение и возвращаем false
+	{
+		cout << "Невозможно добавить элемент, так как стек полностью заполнен." << endl;
+		return false; // стек полон
+	}
+	
+	StackPtr = (T*)realloc(StackPtr, (top + 2) * sizeof(T)); // Выделяем память для нового элемента
+	for (int i = top; i >= 0; i--)
+	{
+		StackPtr[i + 1] = StackPtr[i];
+	} 
+	StackPtr[0] = value;
+	top++;
+	return true;
+}
+
 // Операция удаления элемента из очереди
 template <typename T, int N>
 bool Stack<T, N>::Pop()
@@ -193,6 +211,24 @@ bool Stack<T, N>::Pop()
 	{
 		cout << "Невозможно удалить элемент, так как стек пуст." << endl; // Выводим соответсвующее сообщения
 		return false; // И возвращаем false
+	}
+	StackPtr = (T*)realloc(StackPtr, top * sizeof(	T)); // Уменьшаем размер очереди(массива StackPtr) на 1
+	top--; // Уменьшаем индекс верхнего элемента 1
+
+	return true; // В случае успеха возвращаем true
+}
+
+template <typename T, int N>
+bool Stack<T, N>::PopFront()
+{
+	if (Empty()) // Провеврка очереди на пустоту, если она пуста, то удалять нечего
+	{
+		cout << "Невозможно удалить элемент, так как стек пуст." << endl; // Выводим соответсвующее сообщения
+		return false; // И возвращаем false
+	}
+	for (int i = 1; i <= top; i++)
+	{
+		StackPtr[i - 1] = StackPtr[i];
 	}
 	StackPtr = (T*)realloc(StackPtr, top * sizeof(T)); // Уменьшаем размер очереди(массива StackPtr) на 1
 	top--; // Уменьшаем индекс верхнего элемента 1
